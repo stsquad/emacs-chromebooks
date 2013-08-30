@@ -53,6 +53,15 @@
   "/usr/local/bin/croutonpowerd -p"
   "Command to poke the powerd daemon to prevent sleep")
 
+;; detection code
+(defun crmbk-running-in-host-x11-p ()
+  "Return 't if this instance of Emacs is running in crouton under the
+host-x11 script"
+  (and (getenv "DISPLAY")
+       (string-prefix-p "/usr/local/bin/host-x11"
+                        (shell-command-to-string "which host-x11"))))
+
+;; powerd related code
 (defun crmbk-poke-powerd ()
   "Poke the crouton powerd daemon to prevent sleep"
   (start-process-shell-command "powerd" 'nil crmbk-crouton-powerd))
@@ -69,6 +78,33 @@
   (when crmbk-powerd-timer
     (cancel-timer crmbk-powerd-timer)
     (setq crmbk-powerd-timer 'nil)))
+;;
+;; Frame handling code
+;;
+;; Function to handle all new frame creation
+(defun crmbk-new-frame-handler (frame)
+  "Do any appropriate set-up on new frame creation.
+This is intended to be called during after-make-frame-functions"
+  (message "crmbk-new-frame-handler")
+  (set-frame-parameter frame 'fullscreen 'fullboth)
+  (crmbk-start-powerd-timer)
+  ; this really should be frame local...
+  (global-set-key (kbd "C-x c") 'delete-frame))
+
+; We need to know if this frame is the one that
+; the new-frame handler set up for
+(defun crmbk-delete-frame-handler (frame)
+  "Clean-up timers and the like"
+  (crmbk-clear-powerd-timer)
+  ; we should really restore what it was!
+  (global-set-key (kbd "C-x c") 'save-buffers-kill-terminal))
+
+;;
+;; Initialise chromebook mode bits.
+;;
+(when (crmbk-running-in-host-x11-p)
+  (add-hook 'after-make-frame-functions 'crmbk-new-frame-handler)
+  (add-hook 'delete-frame-functions 'crmbk-delete-frame-handler))
 
 (provide 'chromebook)
 
