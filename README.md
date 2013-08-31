@@ -9,12 +9,16 @@ pre-requisites
 
 You will need:
   * A Chromebook running ChromeOS
-  * A crouton install [1] with emacs in it
-  * The latest Edit with Emacs [2] from git
+  * A [crouton][1] install with emacs in it
+  * The latest [Edit with Emacs][2] from git (server and chrome extension)
   * This package
 
 using
 -----
+
+In the Chrome extension configuration page enable:
+
+    Allow clicking on Emacs icon to bring Emacs to foreground when no text area in focus
 
 I have the following in my .emacs
 
@@ -29,13 +33,13 @@ I have the following in my .emacs
 
 I start Emacs in my crouton chroot with a command like:
 
-host-x11 emacs --daemon
+    host-x11 emacs --daemon
 
 Then when no edit area is in focus in my Chrome browser I can click
 the emacs link and up pops a full frame Emacs. Normal edit-with-emacs
 functionality works as well. Dismiss the frame with:
 
-C-c x
+    C-c x
 
 what works
 ----------
@@ -54,8 +58,8 @@ to do
 - [ ] Handle special keys better
 - [ ] Remap Search to Ctrl (or at least offer the option)
 
-[1]: https://github.com/dnschneid/crouton
-[2]: https://github.com/stsquad/emacs_chrome
+[1]: https://github.com/dnschneid/crouton "Crouton chroot for ChromeOS"
+[2]: https://github.com/stsquad/emacs_chrome "Edit with Emacs Chrome Extension"
 
 
 
