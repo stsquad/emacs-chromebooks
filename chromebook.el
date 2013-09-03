@@ -53,6 +53,26 @@
   "/usr/local/bin/croutonpowerd -p"
   "Command to poke the powerd daemon to prevent sleep")
 
+;;; Mode magic
+;;
+;; We want to re-map a bunch of Chromebook keys
+
+(defvar crmbk-frame-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") 'delete-frame)
+    (define-key map (kbd "C-x C-c") 'delete-frame)
+    map)
+  "Keymap for minor mode `crmbk-frame-mode'.")
+
+(define-minor-mode crmbk-frame-mode
+  "Minor mode enabled on buffers when a frame is opened in
+Chrome OS's Ash window manager."
+  :lighter " Crmbk"
+  :init-value nil
+  :global t
+  :keymap crmbk-frame-mode-map
+  (crmbk-start-powerd-timer))
+
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
   "Return 't if this instance of Emacs is running in crouton under the
@@ -85,19 +105,18 @@ host-x11 script"
 (defun crmbk-new-frame-handler (frame)
   "Do any appropriate set-up on new frame creation.
 This is intended to be called during after-make-frame-functions"
-  (message "crmbk-new-frame-handler")
-  (set-frame-parameter frame 'fullscreen 'fullboth)
-  (crmbk-start-powerd-timer)
-  ; this really should be frame local...
-  (global-set-key (kbd "C-x c") 'delete-frame))
+  (when (frame-parameter frame 'display)
+    (set-frame-parameter frame 'fullscreen 'fullboth)
+    (crmbk-frame-mode t)))
 
 ; We need to know if this frame is the one that
 ; the new-frame handler set up for
 (defun crmbk-delete-frame-handler (frame)
   "Clean-up timers and the like"
-  (crmbk-clear-powerd-timer)
-  ; we should really restore what it was!
-  (global-set-key (kbd "C-x c") 'save-buffers-kill-terminal))
+  (when (frame-parameter frame 'display)
+    (crmbk-frame-mode -1)
+    (crmbk-clear-powerd-timer)))
+  
 
 ;;
 ;; Initialise chromebook mode bits.
