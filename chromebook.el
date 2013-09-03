@@ -35,7 +35,6 @@
 ;; To support this mode of running we:
 ;;
 ;;   - configure Emacs to run in full-frame mode
-;;   - advise C-c C-x to (delete-frame)
 ;;   - periodically poke the power daemon to prevent sleeping
 ;;
 
@@ -70,8 +69,7 @@ Chrome OS's Ash window manager."
   :lighter " Crmbk"
   :init-value nil
   :global t
-  :keymap crmbk-frame-mode-map
-  (crmbk-start-powerd-timer))
+  :keymap crmbk-frame-mode-map)
 
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
@@ -107,7 +105,8 @@ host-x11 script"
 This is intended to be called during after-make-frame-functions"
   (when (frame-parameter frame 'display)
     (set-frame-parameter frame 'fullscreen 'fullboth)
-    (crmbk-frame-mode t)))
+    (crmbk-frame-mode t)
+    (crmbk-start-powerd-timer)))
 
 ; We need to know if this frame is the one that
 ; the new-frame handler set up for
