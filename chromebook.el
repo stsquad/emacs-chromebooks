@@ -58,7 +58,6 @@
 
 (defvar crmbk-frame-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c C-c") 'delete-frame)
     (define-key map (kbd "C-x C-c") 'delete-frame)
     map)
   "Keymap for minor mode `crmbk-frame-mode'.")
