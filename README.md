@@ -1,5 +1,6 @@
 Emacs for Chromebooks
 =====================
+[![Build Status](https://travis-ci.org/stsquad/emacs-chromebooks.png?branch=master)](https://travis-ci.org/stsquad/emacs-chromebooks)
 
 Chromebooks are web focused laptops that run a very cut down version
 of Linux. If you enable Developer mode you can install a set of
