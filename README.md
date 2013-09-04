@@ -1,10 +1,19 @@
-emacs-chromebooks
-=================
+Emacs for Chromebooks
+=====================
 
-Some integrations for running a crouton powered emacs session on your
-Chromebook.
+Chromebooks are web focused laptops that run a very cut down version
+of Linux. If you enable Developer mode you can install a set of
+scripts called Crouton which allow you to have a fuller Linux
+environment in a chroot. Normally people run a secondary X session on
+a different console in a sort of parallel setup. However it is
+possible for binaries to access the main ChromeOS X session although
+with some limitations.
 
-pre-requisites
+This package is intended to allow running Emacs from such a chroot as
+a full-screen window in the main ChromeOS environment. You then bring
+up your emacs session by clicking the Emacs logo inside your browser.
+
+Pre-requisites
 --------------
 
 You will need:
@@ -51,8 +60,10 @@ poke the power daemon to ensure it doesn't go to sleep while Emacs has
 it's attention (as resume gets confused if Emacs is hogging the
 frame).
 
-to do
+To Do
 -----
+
+This is a list of things I plan to add.
 
 - [ ] Disable touchpad
 - [ ] Handle special keys better
