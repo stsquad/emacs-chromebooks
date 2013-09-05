@@ -49,7 +49,7 @@ Then when no edit area is in focus in my Chrome browser I can click
 the emacs link and up pops a full frame Emacs. Normal edit-with-emacs
 functionality works as well. Dismiss the frame with:
 
-    C-c x
+    C-x C-c
 
 what works
 ----------
@@ -68,7 +68,7 @@ This is a list of things I plan to add.
 
 - [ ] Disable touchpad
 - [ ] Handle special keys better
-- [ ] Remap Search to Ctrl (or at least offer the option)
+- [x] Remap Search to Ctrl (or at least offer the option)
 
 [1]: https://github.com/dnschneid/crouton "Crouton chroot for ChromeOS"
 [2]: https://github.com/stsquad/emacs_chrome "Edit with Emacs Chrome Extension"

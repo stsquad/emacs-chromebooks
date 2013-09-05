@@ -85,16 +85,31 @@ host-x11 script"
 
 (defun crmbk-start-powerd-timer ()
   "Start a periodic timer, poking the powerd"
-  (interactive)
   (when (not crmbk-powerd-timer)
     (setq crmbk-powerd-timer (run-with-timer 10 10 'crmbk-poke-powerd))))
 
 (defun crmbk-clear-powerd-timer ()
   "Clear the periodic timer"
-  (interactive)
   (when crmbk-powerd-timer
     (cancel-timer crmbk-powerd-timer)
     (setq crmbk-powerd-timer 'nil)))
+
+;; keyboard re-mapping
+;
+; While under host-x11 we can call xmodmap to modify the keymaps. I
+; use this to re-map the search key to an alternate control while in
+; the minor mode.
+(defun crmbk-remap-search ()
+  "Remap the search key to control"
+  (async-shell-command
+   "xmodmap -e 'remove mod4 = Super_L' -e 'add control = Super_L'"))
+
+(defun crmbk-reset-search ()
+  "Reset the search key to it's previous setting"
+  (interactive)
+  (async-shell-command
+   "xmodmap -e 'remove control = Super_L' -e 'add mod4 = Super_L'"))
+
 ;;
 ;; Frame handling code
 ;;
