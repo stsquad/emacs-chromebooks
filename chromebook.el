@@ -37,6 +37,14 @@
 ;;   - configure Emacs to run in full-frame mode
 ;;   - periodically poke the power daemon to prevent sleeping
 ;;
+;; Optionally when we enter this mode we can:
+;;   - disable the touch pad to prevent stray touches
+;;   - remap the search key to an additional control
+;;
+;; This is done by adding the appropriate hooks:
+;;   (add-hook 'crmbk-frame-mode-hook 'crmbk-remap-search)
+;;   (add-hook 'crmbk-frame-mode-hook 'crmbk-disable-touchpad)
+;;
 
 ;;; Code:
 
@@ -124,6 +132,37 @@ host-x11 script"
   (start-process "xmodmap" 'nil
    "xmodmap" "-e" "remove control = Super_L" "-e" "add mod4 = Super_L"))
 
+;; TouchPad handling
+;
+; We can use xinput to control the state of the touchpad
+;
+
+(defvar crmbk-touchpad-id
+  'nil
+  "The xinput id of the touchpad for later tweaks")
+
+(defun crmbk--find-touchpad ()
+  "Find the X input ID of the touchpad"
+  (setq crmbk-touchpad-id
+        (with-temp-buffer
+          (shell-command "xinput list" (current-buffer))
+          (goto-char (point-min))
+          (re-search-forward "[Tt]ouchpad\\s-+id=\\([0-9]+\\)")
+          (match-string 1))))
+
+(defun crmbk-reenable-touchpad ()
+  "Re-enable the touchpad"
+  (when (stringp crmbk-touchpad-id)
+    (start-process "xinput" 'nil
+                   "xinput" "set-prop" crmbk-touchpad-id "Tap Enable" "1")))
+
+(defun crmbk-disable-touchpad ()
+  "Disable the TouchPad while in crmbk-mode"
+  (when (stringp crmbk-touchpad-id)
+    (start-process "xinput" 'nil
+                   "xinput" "set-prop" crmbk-touchpad-id "Tap Enable" "0")
+    (add-hook 'crmbk-frame-mode-close-hook 'crmbk-reenable-touchpad)))
+
 ;;
 ;; Frame handling code
 ;;
@@ -146,6 +185,7 @@ This is intended to be called during after-make-frame-functions"
 ;; Initialise chromebook mode bits.
 ;;
 (when (crmbk-running-in-host-x11-p)
+  (crmbk--find-touchpad)
   (add-hook 'after-make-frame-functions 'crmbk-new-frame-handler)
   (add-hook 'delete-frame-functions 'crmbk-delete-frame-handler))
 
