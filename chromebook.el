@@ -62,13 +62,27 @@
     map)
   "Keymap for minor mode `crmbk-frame-mode'.")
 
+(defvar crmbk-frame-mode-close-hook
+  'nil
+  "Hook to run when the mode is closed")
+
 (define-minor-mode crmbk-frame-mode
   "Minor mode enabled on buffers when a frame is opened in
-Chrome OS's Ash window manager."
+Chrome OS's Ash window manager. Call with a negative arg to
+shutdown the mode."
   :lighter " Crmbk"
   :init-value nil
   :global t
-  :keymap crmbk-frame-mode-map)
+  :keymap crmbk-frame-mode-map
+  (cond
+   ((and
+     (numberp arg)
+     (< arg 0))
+     ; clear down mode
+    (crmbk-clear-powerd-timer)
+    (run-hooks 'crmbk-frame-mode-close-hook))
+   (t
+    (crmbk-start-powerd-timer))))
 
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
@@ -119,17 +133,14 @@ host-x11 script"
 This is intended to be called during after-make-frame-functions"
   (when (frame-parameter frame 'display)
     (set-frame-parameter frame 'fullscreen 'fullboth)
-    (crmbk-frame-mode t)
-    (crmbk-start-powerd-timer)))
+    (crmbk-frame-mode t)))
 
 ; We need to know if this frame is the one that
 ; the new-frame handler set up for
 (defun crmbk-delete-frame-handler (frame)
   "Clean-up timers and the like"
   (when (frame-parameter frame 'display)
-    (crmbk-frame-mode -1)
-    (crmbk-clear-powerd-timer)))
-  
+    (crmbk-frame-mode -1)))
 
 ;;
 ;; Initialise chromebook mode bits.
