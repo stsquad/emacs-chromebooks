@@ -95,7 +95,7 @@ host-x11 script"
 ;; powerd related code
 (defun crmbk-poke-powerd ()
   "Poke the crouton powerd daemon to prevent sleep"
-  (start-process-shell-command "powerd" 'nil crmbk-crouton-powerd))
+  (start-process "powerd" 'nil crmbk-crouton-powerd))
 
 (defun crmbk-start-powerd-timer ()
   "Start a periodic timer, poking the powerd"
@@ -115,14 +115,14 @@ host-x11 script"
 ; the minor mode.
 (defun crmbk-remap-search ()
   "Remap the search key to control"
-  (async-shell-command
-   "xmodmap -e 'remove mod4 = Super_L' -e 'add control = Super_L'"))
+  (start-process "xmodmap" 'nil 
+   "xmodmap" "-e" "remove mod4 = Super_L" "-e" "add control = Super_L"))
 
 (defun crmbk-reset-search ()
   "Reset the search key to it's previous setting"
   (interactive)
-  (async-shell-command
-   "xmodmap -e 'remove control = Super_L' -e 'add mod4 = Super_L'"))
+  (start-process "xmodmap" 'nil
+   "xmodmap" "-e" "remove control = Super_L" "-e" "add mod4 = Super_L"))
 
 ;;
 ;; Frame handling code
