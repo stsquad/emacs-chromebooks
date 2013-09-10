@@ -124,7 +124,8 @@ host-x11 script"
 (defun crmbk-remap-search ()
   "Remap the search key to control"
   (start-process "xmodmap" 'nil 
-   "xmodmap" "-e" "remove mod4 = Super_L" "-e" "add control = Super_L"))
+   "xmodmap" "-e" "remove mod4 = Super_L" "-e" "add control = Super_L")
+  (add-hook 'crmbk-frame-mode-close-hook 'crmbk-reset-search))
 
 (defun crmbk-reset-search ()
   "Reset the search key to it's previous setting"
