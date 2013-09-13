@@ -60,6 +60,10 @@
   "/usr/local/bin/croutonpowerd -p"
   "Command to poke the powerd daemon to prevent sleep")
 
+(defvar crmbk-current-frame
+  'nil
+  "Current X11 frame if running")
+
 ;;; Mode magic
 ;;
 ;; We want to re-map a bunch of Chromebook keys
@@ -173,6 +177,7 @@ host-x11 script"
 This is intended to be called during after-make-frame-functions"
   (when (frame-parameter frame 'display)
     (set-frame-parameter frame 'fullscreen 'fullboth)
+    (setq crmbk-current-frame frame)
     (crmbk-frame-mode t)))
 
 ; We need to know if this frame is the one that
@@ -180,6 +185,8 @@ This is intended to be called during after-make-frame-functions"
 (defun crmbk-delete-frame-handler (frame)
   "Clean-up timers and the like"
   (when (frame-parameter frame 'display)
+    (when (eq frame crmbk-current-frame)
+      (setq crmbk-current-frame 'nil))
     (crmbk-frame-mode -1)))
 
 ;;
