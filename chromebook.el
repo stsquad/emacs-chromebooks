@@ -52,13 +52,19 @@
 ;; (setq debug-on-error t)
 ;; (setq edebug-all-defs t)
 
-(defvar crmbk-powerd-timer
-  'nil
-  "Timer id of periodic timer task")
+(require 'dbus)
 
 (defvar crmbk-crouton-powerd
-  "/usr/local/bin/croutonpowerd -p"
-  "Command to poke the powerd daemon to prevent sleep")
+  "/usr/local/bin/croutonpowerd"
+  "Location of the crouton powerd daemon to prevent sleep")
+
+(defvar crmbk-crouton-powerd-process
+  'nil
+  "Current daemonised croutonpowerd process")
+
+(defvar crmbk-host-dbus-socket
+  "unix:path=/var/host/dbus/system_bus_socket"
+  "Location of DBUS_SYSTEM_BUS_ADDRESS for host")
 
 (defvar crmbk-current-frame
   'nil
@@ -91,10 +97,12 @@ shutdown the mode."
      (numberp arg)
      (< arg 0))
      ; clear down mode
-    (crmbk-clear-powerd-timer)
+    (message "crmbk-frame-mode: cleaning up")
+    (crmbk-stop-crouton-powerd)
     (run-hooks 'crmbk-frame-mode-close-hook))
    (t
-    (crmbk-start-powerd-timer))))
+    (message "crmbk-frame-mode: starting")
+    (crmbk-start-crouton-powerd))))
 
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
@@ -105,20 +113,38 @@ host-x11 script"
                         (shell-command-to-string "which host-x11"))))
 
 ;; powerd related code
-(defun crmbk-poke-powerd ()
-  "Poke the crouton powerd daemon to prevent sleep"
-  (start-process "powerd" 'nil crmbk-crouton-powerd))
+;
+; Rather than use the crouton scripts we hook directly into the
+; power managers DBUS interface. This way we can register Emacs
+; as something that needs to prepare when a suspend is imminent.
 
-(defun crmbk-start-powerd-timer ()
-  "Start a periodic timer, poking the powerd"
-  (when (not crmbk-powerd-timer)
-    (setq crmbk-powerd-timer (run-with-timer 10 10 'crmbk-poke-powerd))))
+(defun crmbk-host-dbus-accesible-p ()
+  "Can we access the host DBUS?"
+  (and (file-exists-p crmbk-host-dbus-socket)
+       (require 'dbus 'nil 't)))
 
-(defun crmbk-clear-powerd-timer ()
-  "Clear the periodic timer"
-  (when crmbk-powerd-timer
-    (cancel-timer crmbk-powerd-timer)
-    (setq crmbk-powerd-timer 'nil)))
+(defun crmbk-register-powerd-suspend-delay ()
+  "Request a suspend delay ID from powerd so we will get
+notified before a suspend occurs"
+  (dbus-call-method
+   crmbk-host-dbus-socket         ; host system bus
+   "org.chromium"                 ; service
+   "/org/chromium/PowerManager"   ; path
+   "org.chromium.PowerManager"    ; interface
+   "RegisterSuspendDelayRequest"  ; method
+   5 "Emacs clean-up"))
+
+(defun crmbk-start-crouton-powerd ()
+  "Start the crouton powerd daemon to prevent sleep"
+  (when (not crmbk-crouton-powerd-process)
+    (setq crmbk-crouton-powerd-process
+          (start-process "croutonpowerd" 'nil "/bin/sh" "-e" "/usr/local/bin/croutonpowerd" "--daemon"))))
+
+(defun crmbk-stop-crouton-powerd ()
+  "Stop the crouton powerd daemon"
+  (when crmbk-crouton-powerd-process
+    (kill-process crmbk-crouton-powerd-process))
+  (setq crmbk-crouton-powerd-process nil))
 
 ;; keyboard re-mapping
 ;
