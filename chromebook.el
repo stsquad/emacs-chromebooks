@@ -54,17 +54,17 @@
 
 (require 'dbus)
 
-(defvar crmbk-crouton-powerd
-  "/usr/local/bin/croutonpowerd"
-  "Location of the crouton powerd daemon to prevent sleep")
-
-(defvar crmbk-crouton-powerd-process
-  'nil
-  "Current daemonised croutonpowerd process")
-
 (defvar crmbk-host-dbus-socket
   "unix:path=/var/host/dbus/system_bus_socket"
   "Location of DBUS_SYSTEM_BUS_ADDRESS for host")
+
+(defvar crmbk-powerd-delay-id
+  'nil
+  "ID assigned to Emacs after a RegisterSuspendDelayRequest")
+
+(defvar crmbk-powerd-listener
+  'nil
+  "ID of DBUS listener listening for SuspendImminent messages")
 
 (defvar crmbk-current-frame
   'nil
@@ -98,11 +98,12 @@ shutdown the mode."
      (< arg 0))
      ; clear down mode
     (message "crmbk-frame-mode: cleaning up")
-    (crmbk-stop-crouton-powerd)
-    (run-hooks 'crmbk-frame-mode-close-hook))
+    (run-hooks 'crmbk-frame-mode-close-hook)
+    (message "crmbk-frame-mode: clean-up done"))
    (t
     (message "crmbk-frame-mode: starting")
-    (crmbk-start-crouton-powerd))))
+    ;(crmbk-register-with-powerd-dbus)
+    )))
 
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
@@ -123,28 +124,64 @@ host-x11 script"
   (and (file-exists-p crmbk-host-dbus-socket)
        (require 'dbus 'nil 't)))
 
-(defun crmbk-register-powerd-suspend-delay ()
-  "Request a suspend delay ID from powerd so we will get
-notified before a suspend occurs"
-  (dbus-call-method
-   crmbk-host-dbus-socket         ; host system bus
+(defun crmbk-register-suspend-delay-handler (msg)
+  "Async handler for RegisterSuspendDelayRequest"
+  (message "crmbk-register-suspend-delay-handler")
+  (when crmbk-powerd-delay-id
+    (warn "crmbk-powerd-delay-id already set: %d, new msg %s"
+          crmbk-powerd-delay-id msg))
+  (setq crmbk-powerd-delay-id msg))
+
+(defun crmbk-suspend-imminent-hander (msg)
+  "Handler for SuspendImminent messages"
+  (setq ajb-test-signal msg)
+  (when crmbk-current-frame
+    (message "crmbk-suspend-imminent-hander: deleting frame")
+    (delete-frame crmbk-current-frame))
+  ; once we have removed any live frame we can signal we are done to
+  ; ChromeOS
+  
+  )
+
+(defun crmbk-notify-powerd-user-activity ()
+  "Send a notification to powerd that there is user activity. This
+is triggered on the post-command-hook"
+  (dbus-call-method-asynchronously
+            :system
+            "org.chromium"                 ; service
+            "/org/chromium/PowerManager"   ; path
+            "org.chromium.PowerManager"    ; interface
+            "HandleUserActivity"           ; method
+            'nil))
+
+(defun crmbk-remove-powerd-hooks
+  "Clean-up any hooks into powerd and it's dbus interface"
+  (remove-hook 'post-command-hook 'crmbk-notify-powerd-user-activity))
+
+(defun crmbk-register-with-powerd-dbus ()
+  "Request a suspend ID and register a signal handler to service
+dbus power notifications"
+  ; add hooks to poke powerd and clean-up when done
+  (add-hook 'post-command-hook 'crmbk-notify-powerd-user-activity)
+  (add-hook 'crmbk-frame-mode-close-hook 'crmbk-remove-powerd-hooks)
+
+  (dbus-call-method-asynchronously
+   :system
    "org.chromium"                 ; service
    "/org/chromium/PowerManager"   ; path
    "org.chromium.PowerManager"    ; interface
    "RegisterSuspendDelayRequest"  ; method
-   5 "Emacs clean-up"))
-
-(defun crmbk-start-crouton-powerd ()
-  "Start the crouton powerd daemon to prevent sleep"
-  (when (not crmbk-crouton-powerd-process)
-    (setq crmbk-crouton-powerd-process
-          (start-process "croutonpowerd" 'nil "/bin/sh" "-e" "/usr/local/bin/croutonpowerd" "--daemon"))))
-
-(defun crmbk-stop-crouton-powerd ()
-  "Stop the crouton powerd daemon"
-  (when crmbk-crouton-powerd-process
-    (kill-process crmbk-crouton-powerd-process))
-  (setq crmbk-crouton-powerd-process nil))
+   'crmbk-register-suspend-delay-handler
+   5 "Emacs clean-up")
+  (when (not crmbk-powerd-listener)
+    (setq crmbk-powerd-listener
+          (dbus-register-signal
+           :system
+           "org.chromium"                 ; service
+           "/org/chromium/PowerManager"   ; path
+           "org.chromium.PowerManager"    ; interface
+           "SuspendImminent"
+           'crmbk-suspend-imminent-hander))))
 
 ;; keyboard re-mapping
 ;
