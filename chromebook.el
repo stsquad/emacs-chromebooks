@@ -102,8 +102,7 @@ shutdown the mode."
     (message "crmbk-frame-mode: clean-up done"))
    (t
     (message "crmbk-frame-mode: starting")
-    ;(crmbk-register-with-powerd-dbus)
-    )))
+    (crmbk-register-with-powerd-dbus))))
 
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
@@ -118,6 +117,8 @@ host-x11 script"
 ; Rather than use the crouton scripts we hook directly into the
 ; power managers DBUS interface. This way we can register Emacs
 ; as something that needs to prepare when a suspend is imminent.
+;
+; http://dev.chromium.org/chromium-os/packages/power_manager
 
 (defun crmbk-host-dbus-accesible-p ()
   "Can we access the host DBUS?"
@@ -143,12 +144,33 @@ host-x11 script"
   
   )
 
+(defun crmbk-setup-delay-request ()
+  ""
+  (dbus-call-method-asynchronously
+   :system
+   "org.chromium.PowerManager"    ; service
+   "/org/chromium/PowerManager"   ; path
+   "org.chromium.PowerManager"    ; interface
+   "RegisterSuspendDelayRequest"  ; method
+   'crmbk-register-suspend-delay-handler
+   (list (lsh 1 3) (logior 5 #x80)))
+  (when (not crmbk-powerd-listener)
+    (setq crmbk-powerd-listener
+          (dbus-register-signal
+           :system
+           "org.chromium.PowerManager"                 ; service
+           "/org/chromium/PowerManager"   ; path
+           "org.chromium.PowerManager"    ; interface
+           "SuspendImminent"
+           'crmbk-suspend-imminent-hander))))
+
+
 (defun crmbk-notify-powerd-user-activity ()
   "Send a notification to powerd that there is user activity. This
 is triggered on the post-command-hook"
   (dbus-call-method-asynchronously
             :system
-            "org.chromium"                 ; service
+            "org.chromium.PowerManager"                 ; service
             "/org/chromium/PowerManager"   ; path
             "org.chromium.PowerManager"    ; interface
             "HandleUserActivity"           ; method
@@ -164,24 +186,8 @@ dbus power notifications"
   ; add hooks to poke powerd and clean-up when done
   (add-hook 'post-command-hook 'crmbk-notify-powerd-user-activity)
   (add-hook 'crmbk-frame-mode-close-hook 'crmbk-remove-powerd-hooks)
-
-  (dbus-call-method-asynchronously
-   :system
-   "org.chromium"                 ; service
-   "/org/chromium/PowerManager"   ; path
-   "org.chromium.PowerManager"    ; interface
-   "RegisterSuspendDelayRequest"  ; method
-   'crmbk-register-suspend-delay-handler
-   5 "Emacs clean-up")
-  (when (not crmbk-powerd-listener)
-    (setq crmbk-powerd-listener
-          (dbus-register-signal
-           :system
-           "org.chromium"                 ; service
-           "/org/chromium/PowerManager"   ; path
-           "org.chromium.PowerManager"    ; interface
-           "SuspendImminent"
-           'crmbk-suspend-imminent-hander))))
+  ;(crmbk-setup-delay-request)
+  )
 
 ;; keyboard re-mapping
 ;
