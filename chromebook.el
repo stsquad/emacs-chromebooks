@@ -176,7 +176,7 @@ is triggered on the post-command-hook"
             "HandleUserActivity"           ; method
             'nil))
 
-(defun crmbk-remove-powerd-hooks
+(defun crmbk-remove-powerd-hooks ()
   "Clean-up any hooks into powerd and it's dbus interface"
   (remove-hook 'post-command-hook 'crmbk-notify-powerd-user-activity))
 
