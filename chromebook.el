@@ -70,6 +70,10 @@
   'nil
   "Current X11 frame if running")
 
+(defvar crmbk-previous-frame-config
+  'nil
+  "Frame configuration last time we exited Chromebook mode")
+
 ;;; Mode magic
 ;;
 ;; We want to re-map a bunch of Chromebook keys
@@ -247,6 +251,9 @@ This is intended to be called during after-make-frame-functions"
   (when (frame-parameter frame 'display)
     (set-frame-parameter frame 'fullscreen 'fullboth)
     (setq crmbk-current-frame frame)
+    (when crmbk-previous-frame-config
+      (window-state-put crmbk-previous-frame-config
+                        (frame-root-window frame)))
     (crmbk-frame-mode t)))
 
 ; We need to know if this frame is the one that
@@ -254,6 +261,7 @@ This is intended to be called during after-make-frame-functions"
 (defun crmbk-delete-frame-handler (frame)
   "Clean-up timers and the like"
   (when (frame-parameter frame 'display)
+    (setq crmbk-previous-frame-config (window-state-get))
     (when (eq frame crmbk-current-frame)
       (setq crmbk-current-frame 'nil))
     (crmbk-frame-mode -1)))
