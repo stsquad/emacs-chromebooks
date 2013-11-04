@@ -43,13 +43,22 @@ I have the following in my .emacs
 
 I start Emacs in my crouton chroot with a command like:
 
-    host-x11 emacs --daemon
+    host-dbus host-x11 emacs --daemon
 
 Then when no edit area is in focus in my Chrome browser I can click
 the emacs link and up pops a full frame Emacs. Normal edit-with-emacs
 functionality works as well. Dismiss the frame with:
 
     C-x C-c
+
+There are a couple of hooks that can be used to disable the touchpad
+and remap the Search key to an additional control. These both require
+the xmodmap utility to be installed:
+
+```
+  (add-hook 'crmbk-frame-mode-hook 'crmbk-remap-search)
+  (add-hook 'crmbk-frame-mode-hook 'crmbk-disable-touchpad)
+```
 
 what works
 ----------
@@ -64,11 +73,13 @@ frame).
 To Do
 -----
 
-This is a list of things I plan to add.
-
-- [ ] Disable touchpad
-- [ ] Handle special keys better
-- [x] Remap Search to Ctrl (or at least offer the option)
+About the only thing left to do is cleanly handle when ChromeOS
+suspends. At the moment if the Emacs window is up when suspend occurs
+it may not show-up when the system wakes up. One option is to hook
+into the dbus notifications for an imminent suspend and delete the
+frame when it occurs. The system already pokes the dbus powerd
+interface to indicate activity but hooking into the listener is a
+little more involved.
 
 [1]: https://github.com/dnschneid/crouton "Crouton chroot for ChromeOS"
 [2]: https://github.com/stsquad/emacs_chrome "Edit with Emacs Chrome Extension"

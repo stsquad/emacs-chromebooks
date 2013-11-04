@@ -139,17 +139,17 @@ host-x11 script"
           crmbk-powerd-delay-id msg))
   (setq crmbk-powerd-delay-id msg))
 
+;; TODO: finish this off
 (defun crmbk-suspend-imminent-hander (msg)
   "Handler for SuspendImminent messages"
-  (setq ajb-test-signal msg)
   (when crmbk-current-frame
     (message "crmbk-suspend-imminent-hander: deleting frame")
     (delete-frame crmbk-current-frame))
-  ; once we have removed any live frame we can signal we are done to
-  ; ChromeOS
-  
+                                        ; once we have removed any live frame we can signal we are done to
+                                        ; ChromeOS
   )
 
+;; TODO: get this working properly
 (defun crmbk-setup-delay-request ()
   ""
   (dbus-call-method-asynchronously
