@@ -52,8 +52,8 @@ functionality works as well. Dismiss the frame with:
     C-x C-c
 
 There are a couple of hooks that can be used to disable the touchpad
-and remap the Search key to an additional control. These both require
-the xmodmap utility to be installed:
+and remap the Search key to an additional control. These require the
+xmodmap and xinput utilities to be installed:
 
 ```
   (add-hook 'crmbk-frame-mode-hook 'crmbk-remap-search)
