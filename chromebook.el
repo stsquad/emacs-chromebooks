@@ -101,11 +101,8 @@ shutdown the mode."
      (numberp arg)
      (< arg 0))
      ; clear down mode
-    (message "crmbk-frame-mode: cleaning up")
-    (run-hooks 'crmbk-frame-mode-close-hook)
-    (message "crmbk-frame-mode: clean-up done"))
+    (run-hooks 'crmbk-frame-mode-close-hook))
    (t
-    (message "crmbk-frame-mode: starting")
     (crmbk-register-with-powerd-dbus))))
 
 ;; detection code
