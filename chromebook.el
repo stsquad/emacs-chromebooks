@@ -123,6 +123,8 @@ host-x11 script"
 ; as something that needs to prepare when a suspend is imminent.
 ;
 ; http://dev.chromium.org/chromium-os/packages/power_manager
+; https://chromium.googlesource.com/chromiumos/platform/system_api/+/master/dbus/power_manager/suspend.proto
+; 
 
 (defun crmbk-host-dbus-accesible-p ()
   "Can we access the host DBUS?"
