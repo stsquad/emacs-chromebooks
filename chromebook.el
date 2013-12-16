@@ -73,6 +73,19 @@
 (defvar crmbk-previous-frame-config
   'nil
   "Frame configuration last time we exited Chromebook mode")
+(defvar crmbk-intel-fbc-control
+  (let ((fbc-control "/sys/module/i915/parameters/i915_enable_fbc"))
+    (when (file-exists-p fbc-control)
+      (if (not (file-writable-p fbc-control))
+          (message
+           "Cannot disable FBC on this hardware, please update Crouton")
+        fbc-control)))
+  "Path to Intel Frame Buffer control variable.
+
+This is a work around for a bug on Intel video hardware which causes
+corruption when frame buffer compression is enabled. If this is set
+then the chromebooks script will disable compression when the Emacs
+frame is being displayed.")
 
 ;;; Mode magic
 ;;
@@ -240,6 +253,14 @@ dbus power notifications"
                    "xinput" "set-prop" crmbk-touchpad-id "Tap Enable" "0")
     (add-hook 'crmbk-frame-mode-close-hook 'crmbk-reenable-touchpad)))
 
+(defun crmbk-reenable-intel-fbc ()
+  "Re-enable Intel Frame Buffer compression."
+  (f-write-bytes "1" crmbk-intel-fbc-control))
+
+(defun crmbk-disable-intel-fbc ()
+  "Disable Intel Frame Buffer compression."
+  (message "Disabling FBC")
+  (f-write-bytes "0" crmbk-intel-fbc-control))
 ;;
 ;; Frame handling code
 ;;
@@ -270,6 +291,8 @@ This is intended to be called during after-make-frame-functions"
 ;;
 (when (crmbk-running-in-host-x11-p)
   (crmbk--find-touchpad)
+  (when crmbk-intel-fbc-control
+    (add-hook 'before-make-frame-hook 'crmbk-disable-intel-fbc))
   (add-hook 'after-make-frame-functions 'crmbk-new-frame-handler)
   (add-hook 'delete-frame-functions 'crmbk-delete-frame-handler))
 
