@@ -25,17 +25,19 @@
 ;;; Commentary:
 ;;
 ;; This extension is designed to support running Emacs running under
-;; the host-x11 script of crouton.  Crouton is a set of scripts that
+;; the host-[x11/dbus] scripts of crouton.  Crouton is a set of scripts that
 ;; allow running of a conventional Linux distribution under a chroot
 ;; environment under ChromeOS.  The host-x11 script allows X11 programs
 ;; to use ChromeOS's X server.  However this has some limitations as
 ;; the native window manager does not normally deal with windows other
-;; than that of Google Chrome.
+;; than that of Google Chrome.  The host-dbus script allows the client
+;; to talk to the system dbus which is needed to poke the power daemon
+;; and eventually to catch suspension warnings.
 ;;
 ;; To support this mode of running we:
 ;;
 ;;   - configure Emacs to run in full-frame mode
-;;   - periodically poke the power daemon to prevent sleeping
+;;   - periodically poke the power daemon to prevent sleeping (dbus)
 ;;
 ;; Optionally when we enter this mode we can:
 ;;   - disable the touch pad to prevent stray touches
