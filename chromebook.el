@@ -253,14 +253,34 @@ dbus power notifications"
                    "xinput" "set-prop" crmbk-touchpad-id "Tap Enable" "0")
     (add-hook 'crmbk-frame-mode-close-hook 'crmbk-reenable-touchpad)))
 
-(defun crmbk-reenable-intel-fbc ()
-  "Re-enable Intel Frame Buffer compression."
-  (f-write-bytes "1" crmbk-intel-fbc-control))
+;; (defun crmbk-reenable-intel-fbc ()
+;;   "Re-enable Intel Frame Buffer compression."
+;;   (f-write-bytes "1" crmbk-intel-fbc-control))
+
+;; FIXME: This workaround doesn't seem to do the trick. It may work
+;; better with the debugfs value.
+(defun crmbk--poll-fbc-status ()
+  "Wait until FBC status has been set."
+  (let ((fbc-value "1"))
+    (while (not (string-match "0" fbc-value))
+      (setq fbc-value
+           (with-temp-buffer
+             (insert-file-contents crmbk-intel-fbc-control)
+             (buffer-string)))
+      (message "fbc-control is %s" fbc-value))))
 
 (defun crmbk-disable-intel-fbc ()
   "Disable Intel Frame Buffer compression."
   (message "Disabling FBC")
-  (f-write-bytes "0" crmbk-intel-fbc-control))
+  (with-temp-buffer
+    (insert "0\n")
+    (append-to-file (point-min) (point-max) crmbk-intel-fbc-control))
+  (when (file-readable-p crmbk-intel-fbc-control)
+    (crmbk--poll-fbc-status)))
+
+;; (setq crmbk-frame-mode-close-hook nil)
+;;  (add-hook 'crmbk-frame-mode-close-hook 'crmbk-reenable-intel-fbc))
+
 ;;
 ;; Frame handling code
 ;;
