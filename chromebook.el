@@ -1,34 +1,34 @@
 ;;; chromebook.el --- Emacs Chromebook support.
-
+;;
 ;; Copyright (C) 2013  Alex Bennée
-
+;;
 ;; Author: Alex Bennée <alex@bennee.com>
 ;; Maintainer: Alex Bennée <alex@bennee.com>
 ;; Version: 0.1
 ;; Homepage: https://github.com/stsquad/emacs-chromebook
-
+;;
 ;; This file is not part of GNU Emacs.
-
+;;
 ;; This file is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 3, or (at your option)
 ;; any later version.
-
+;;
 ;; This file is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-
+;;
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+;;
 ;;; Commentary:
-
-;; This extension is designed to support running emacs running under
-;; the host-x11 script of crouton. Crouton is a set of scripts that
+;;
+;; This extension is designed to support running Emacs running under
+;; the host-x11 script of crouton.  Crouton is a set of scripts that
 ;; allow running of a conventional Linux distribution under a chroot
-;; environment under ChromeOS. The host-x11 script allows X11 programs
-;; to use ChromeOS's X server. However this has some limitations as
+;; environment under ChromeOS.  The host-x11 script allows X11 programs
+;; to use ChromeOS's X server.  However this has some limitations as
 ;; the native window manager does not normally deal with windows other
 ;; than that of Google Chrome.
 ;;
@@ -45,7 +45,7 @@
 ;;   (add-hook 'crmbk-frame-mode-hook 'crmbk-remap-search)
 ;;   (add-hook 'crmbk-frame-mode-hook 'crmbk-disable-touchpad)
 ;;
-
+;;
 ;;; Code:
 
 ;; uncomment to debug
@@ -56,23 +56,24 @@
 
 (defvar crmbk-host-dbus-socket
   "unix:path=/var/host/dbus/system_bus_socket"
-  "Location of DBUS_SYSTEM_BUS_ADDRESS for host")
+  "Location of DBUS_SYSTEM_BUS_ADDRESS for host.")
 
 (defvar crmbk-powerd-delay-id
   'nil
-  "ID assigned to Emacs after a RegisterSuspendDelayRequest")
+  "ID assigned to Emacs after a RegisterSuspendDelayRequest.")
 
 (defvar crmbk-powerd-listener
   'nil
-  "ID of DBUS listener listening for SuspendImminent messages")
+  "ID of DBUS listener listening for SuspendImminent messages.")
 
 (defvar crmbk-current-frame
   'nil
-  "Current X11 frame if running")
+  "Current X11 frame if running.")
 
 (defvar crmbk-previous-frame-config
   'nil
-  "Frame configuration last time we exited Chromebook mode")
+  "Frame configuration last time we exited Chromebook mode.")
+
 (defvar crmbk-intel-fbc-control
   (let ((fbc-control "/sys/module/i915/parameters/i915_enable_fbc"))
     (when (file-exists-p fbc-control)
@@ -87,9 +88,10 @@ corruption when frame buffer compression is enabled. If this is set
 then the chromebooks script will disable compression when the Emacs
 frame is being displayed.")
 
+
 ;;; Mode magic
 ;;
-;; We want to re-map a bunch of Chromebook keys
+;; We want to re-map some Chromebook keys
 
 (defvar crmbk-frame-mode-map
   (let ((map (make-sparse-keymap)))
@@ -99,7 +101,7 @@ frame is being displayed.")
 
 (defvar crmbk-frame-mode-close-hook
   'nil
-  "Hook to run when the mode is closed")
+  "Hook to run when the mode is closed.")
 
 (define-minor-mode crmbk-frame-mode
   "Minor mode enabled on buffers when a frame is opened in
@@ -120,8 +122,8 @@ shutdown the mode."
 
 ;; detection code
 (defun crmbk-running-in-host-x11-p ()
-  "Return 't if this instance of Emacs is running in crouton under the
-host-x11 script"
+  "Return t if this instance of Emacs is running in crouton under the
+host-x11 script."
   (and (getenv "DISPLAY")
        (string-prefix-p "/usr/local/bin/host-x11"
                         (shell-command-to-string "which host-x11"))))
@@ -211,13 +213,13 @@ dbus power notifications"
 ; use this to re-map the search key to an alternate control while in
 ; the minor mode.
 (defun crmbk-remap-search ()
-  "Remap the search key to control"
+  "Remap the search key to control."
   (start-process "xmodmap" 'nil 
    "xmodmap" "-e" "remove mod4 = Super_L" "-e" "add control = Super_L")
   (add-hook 'crmbk-frame-mode-close-hook 'crmbk-reset-search))
 
 (defun crmbk-reset-search ()
-  "Reset the search key to it's previous setting"
+  "Reset the search key to it's previous setting."
   (interactive)
   (start-process "xmodmap" 'nil
    "xmodmap" "-e" "remove control = Super_L" "-e" "add mod4 = Super_L"))
@@ -229,10 +231,10 @@ dbus power notifications"
 
 (defvar crmbk-touchpad-id
   'nil
-  "The xinput id of the touchpad for later tweaks")
+  "The xinput id of the touchpad for later tweaks.")
 
 (defun crmbk--find-touchpad ()
-  "Find the X input ID of the touchpad"
+  "Find the X input ID of the touchpad."
   (setq crmbk-touchpad-id
         (with-temp-buffer
           (shell-command "xinput list" (current-buffer))
@@ -241,13 +243,13 @@ dbus power notifications"
           (match-string 1))))
 
 (defun crmbk-reenable-touchpad ()
-  "Re-enable the touchpad"
+  "Re-enable the touchpad."
   (when (stringp crmbk-touchpad-id)
     (start-process "xinput" 'nil
                    "xinput" "set-prop" crmbk-touchpad-id "Tap Enable" "1")))
 
 (defun crmbk-disable-touchpad ()
-  "Disable the TouchPad while in crmbk-mode"
+  "Disable the TouchPad while in crmbk-mode."
   (when (stringp crmbk-touchpad-id)
     (start-process "xinput" 'nil
                    "xinput" "set-prop" crmbk-touchpad-id "Tap Enable" "0")
@@ -299,7 +301,7 @@ This is intended to be called during after-make-frame-functions"
 ; We need to know if this frame is the one that
 ; the new-frame handler set up for
 (defun crmbk-delete-frame-handler (frame)
-  "Clean-up timers and the like"
+  "Clean-up timers and the like."
   (when (frame-parameter frame 'display)
     (setq crmbk-previous-frame-config (window-state-get))
     (when (eq frame crmbk-current-frame)
