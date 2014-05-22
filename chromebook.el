@@ -237,12 +237,11 @@ dbus power notifications"
 
 (defun crmbk--find-touchpad ()
   "Find the X input ID of the touchpad."
-  (setq crmbk-touchpad-id
-        (with-temp-buffer
-          (shell-command "xinput list" (current-buffer))
-          (goto-char (point-min))
-          (re-search-forward "[Tt]ouchpad\\s-+id=\\([0-9]+\\)")
-          (match-string 1))))
+  (with-temp-buffer
+    (shell-command "xinput list" (current-buffer))
+    (goto-char (point-min))
+    (when (re-search-forward "[Tt]ouchpad\\s-+id=\\([0-9]+\\)" nil t)
+      (setq crmbk-touchpad-id (match-string 1)))))
 
 (defun crmbk-reenable-touchpad ()
   "Re-enable the touchpad."
